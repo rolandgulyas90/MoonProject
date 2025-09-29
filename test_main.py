@@ -1,4 +1,5 @@
 from main import Buggy, Moon, Direction, Position
+from dataclasses import dataclass
 
 def test_initial_state():
     planet = Moon(width = 5, height = 5, obstacles=[])
@@ -67,3 +68,27 @@ def test_wraparound_edges_backward():
     b = Buggy(planet, Position(2, 0), Direction.N)
     b.move_backward()
     assert b.position == Position(2, 4)
+
+def test_obstacle_blocks_first_step_and_reports():
+    planet = Moon(5, 5, obstacles = [(1,0)])
+    b = Buggy(planet, Position(0,0), Direction.E)
+
+    res = b.execute("f")
+    assert b.position == Position(0,0)
+    assert res.blocked == True
+    assert res.obstacles == Position(1,0)
+    assert res.processed == 0
+    assert res.remaining == "f"
+    assert res.direction == "E"
+
+def test_stops_on_first_obstacle_in_longer_sequence():
+    planet = Moon(5, 5, obstacles = [(2,2)])
+    b = Buggy(planet, Position(0,2), Direction.E)
+
+    res = b.execute("ffrff")
+    assert b.position == Position(1,2)
+    assert res.blocked == True
+    assert res.obstacles == Position(2,2)
+    assert res.processed == 1
+    assert res.remaining == "frff"
+    assert res.direction == "E"
