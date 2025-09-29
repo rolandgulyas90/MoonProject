@@ -92,3 +92,18 @@ def test_stops_on_first_obstacle_in_longer_sequence():
     assert res.processed == 1
     assert res.remaining == "frff"
     assert res.direction == "E"
+
+def test_processed_counts_turns_and_stops_on_obstacle():
+    moon = Moon(5, 5, obstacles = [(2,0)])
+    b = Buggy(moon, Position(0,0), Direction.E)
+    res = b.execute("rlff")
+    # az első két turn lefutott
+    assert b.direction == Direction.E
+    # az első f sikerült, poz (1,0)
+    assert b.position == Position(1, 0)
+    # a második f blokkolt (2,0 obstacle)
+    assert res.blocked is True
+    assert res.obstacles == Position(2,0)
+    # processed = 3 (r,l,f), remaining = "f"
+    assert res.processed == 3
+    assert res.remaining == "f"

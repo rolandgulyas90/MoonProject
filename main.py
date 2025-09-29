@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Optional, Iterable, Set, Tuple
 
 @dataclass(frozen=True)
 class Position:
@@ -30,16 +30,6 @@ class Direction(str, Enum):
             Direction.W: Direction.N,
         }[self]
 
-
-@dataclass(frozen=True)
-class ExecutionResult:
-    position: Position
-    direction: str
-    blocked: bool
-    obstaces: Optional[Position]
-    processed: int
-    remaining: str
-
 def _dir_vector(d: Direction) -> tuple[int, int]:
     # y koordinátára váltás a fordulás miatt
     return{
@@ -49,17 +39,38 @@ def _dir_vector(d: Direction) -> tuple[int, int]:
         Direction.W: (-1,0),
     }[d]
 
-def _wrap(planet: Moon, pos: Position) -> Position:
-    return Position(pos.x % planet.width, pos.y % planet.height)
+@dataclass(frozen=True)
+class ExecutionResult:
+    position: Position
+    direction: str
+    blocked: bool
+    obstacles: Optional[Position]
+    processed: int
+    remaining: str
 
-def _has_obstacle(planet: Moon, pos: Position) -> bool:
-    return (pos.x % planet.width, pos.y % planet.height) in planet.obstacles
+    @property
+    def obstacle(self) -> Optional[Position]:
+        return self.obstacles
 
 @dataclass
 class Moon:
     width: int
     height: int
     obstacles: list[tuple[int, int]]
+
+    def __post_init__(self) -> None:
+        # Normalizálás és 0(1) keresés: list >set. modulo térképméret
+        norm: Set[Tuple[int, int]] = {
+            (x % self.width, y % self.height) for (x, y) in self.obstacles
+        }
+        self.obstacles = norm
+
+    def wrap(self, pos: Position) -> Position:
+        return Position(pos.x % self.width, pos.y % self.height)
+
+    def has_obstacle(self, pos: Position) -> bool:
+        return (pos.x % self.width, pos.y % self.height) in self.obstacles
+
 
 @dataclass
 class Buggy:
@@ -75,9 +86,12 @@ class Buggy:
 
     def _next(self, sign: int) -> Position:
         dx, dy = _dir_vector(self.direction)
-        return _wrap(self.planet, Position(self.position.x + dx * sign, self.position.y + dy * sign))
+        return self.planet.wrap(
+            Position(self.position.x + sign * dx, self.position.y + sign * dy)
+        )
 
     def move_forward(self) -> None:
+        #közvetlen hívásnál nicsn akadály észlelés
         self.position = self._next(+1)
 
     def move_backward(self) -> None:
@@ -99,14 +113,14 @@ class Buggy:
             elif cl in ("f","b"):
                 sign = +1 if cl == "f" else -1
                 nxt = self._next(sign)
-                if _has_obstacle(self.planet, nxt):
+                if self.planet.has_obstacle(nxt):
                     blocked = True
                     obstacle_pos = nxt
                     break #megáll, a blokkolo utasitast nem hajtja vegre, de ha nicns akadály lép
                 self.position = nxt
                 processed += 1
             else:
-                #ismeretlen parancsot letiltjuk, ezzen nem növeljüök a processed változót
+                #ismeretlen parancsot letiltjuk, ezzel nem növeljüök a processed változót
                 pass
 
         remaining = commands[processed:]
@@ -114,7 +128,7 @@ class Buggy:
             position=self.position,
             direction=self.direction.value,
             blocked=blocked,
-            obstaces=obstacle_pos,
+            obstacles=obstacle_pos,
             processed=processed,
             remaining=remaining,
         )
