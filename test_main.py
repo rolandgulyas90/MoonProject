@@ -33,3 +33,37 @@ def test_forward_and_backward():
 
     b.move_backward()
     assert b.position == Position(3,4)
+
+def test_wraparound_edges_forward():
+    planet = Moon(5, 5, [])
+    # West-> x:0-ról balra lépve a túloldalon bukkan fel (x:4)
+    b = Buggy(planet, Position(0,2), Direction.W)
+    b.move_forward()
+    assert b.position == Position(4,2)
+
+    # South-> y:0-ról lefelé lépve a túloldalon bukkan fel (y:4)
+    b = Buggy(planet, Position(1,0), Direction.S)
+    b.move_forward()
+    assert b.position == Position(1,4)
+
+    # East-> x:4-ről jobbra lépve x:0
+    b= Buggy(planet, Position(4,1), Direction.E)
+    b.move_forward()
+    assert b.position == Position(0,1)
+
+    # North-> y:4-ről felfelé lépve y:0
+    b = Buggy(planet, Position(3,4), Direction.N)
+    b.move_forward()
+    assert b.position == Position(3,0)
+
+def test_wraparound_edges_backward():
+    planet = Moon(5, 5, [])
+    # West irány esetén kelet felé lépünk
+    b = Buggy(planet, Position(4, 1), Direction.W)
+    b.move_backward()
+    assert b.position == Position(0, 1)
+
+    # Backward North irány esetén dél felé lépünk
+    b = Buggy(planet, Position(2, 0), Direction.N)
+    b.move_backward()
+    assert b.position == Position(2, 4)
