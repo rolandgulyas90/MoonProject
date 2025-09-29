@@ -9,35 +9,27 @@ class Position:
     y: int
 
 class Direction(str, Enum):
-    N = "N"
-    S = "S"
-    E = "E"
-    W = "W"
+    N = "N"; S = "S"; E = "E"; W = "W"
 
     def left(self) -> "Direction":
-        return {
-            Direction.N: Direction.W,
-            Direction.W: Direction.S,
-            Direction.S: Direction.E,
-            Direction.E: Direction.N,
-        }[self]
+        i = _ORDER.index(self)
+        return _ORDER[(i - 1 ) % 4]
 
     def right(self) -> "Direction":
-        return {
-            Direction.N: Direction.E,
-            Direction.E: Direction.S,
-            Direction.S: Direction.W,
-            Direction.W: Direction.N,
+        i = _ORDER.index(self)
+        return _ORDER[(i + 1) % 4]
+
+    @property
+    def vector(self) -> tuple[int, int]:
+        # y koordinátára váltás a fordulás miatt
+        return{
+            Direction.N: (0,1),
+            Direction.E: (1,0),
+            Direction.S: (0,-1),
+            Direction.W: (-1,0),
         }[self]
 
-def _dir_vector(d: Direction) -> tuple[int, int]:
-    # y koordinátára váltás a fordulás miatt
-    return{
-        Direction.N: (0,1),
-        Direction.E: (1,0),
-        Direction.S: (0,-1),
-        Direction.W: (-1,0),
-    }[d]
+_ORDER= (Direction.N, Direction.E, Direction.S, Direction.W)
 
 @dataclass(frozen=True)
 class ExecutionResult:
