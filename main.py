@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Optional
+from typing import Optional
 
 @dataclass(frozen=True)
 class Position:
@@ -30,9 +30,16 @@ class Direction(str, Enum):
             Direction.W: Direction.N,
         }[self]
 
-def _wrap(planet: Moon, pos: Position) -> Position:
-    return Position(pos.x % planet.width, pos.y % planet.height)
-    
+
+@dataclass(frozen=True)
+class ExecutionResult:
+    position: Position
+    direction: str
+    blocked: bool
+    obstace: Optional[Position]
+    processed: int
+    remaining: str
+
 def _dir_vector(d: Direction) -> tuple[int, int]:
     # y koordinátára váltás a fordulás miatt
     return{
@@ -41,6 +48,12 @@ def _dir_vector(d: Direction) -> tuple[int, int]:
         Direction.S: (0,-1),
         Direction.W: (-1,0),
     }[d]
+
+def _wrap(planet: Moon, pos: Position) -> Position:
+    return Position(pos.x % planet.width, pos.y % planet.height)
+
+def _has_obstacle(planet: Moon, pos: Position) -> bool:
+    return (pos.x % planet.width, pos.y % planet.height) in planet.obstacles
 
 @dataclass
 class Moon:
@@ -69,3 +82,39 @@ class Buggy:
 
     def move_backward(self) -> None:
         self.position = self._next(-1)
+
+    def execute(self, commands: str)   -> ExecutionResult:
+        processed = 0
+        blocked = False
+        obstacle_pos: Optional[Position] = None
+
+        for c in commands:
+            cl = c.lower()
+            if cl == "l":
+                self.turn_left()
+                processed += 1
+            elif cl == "r":
+                self.turn_right()
+                processed += 1
+            elif cl in ("f","b"):
+                sign = +1 if cl == "f" else -1
+                nxt = self._next(sign)
+                if _has_obstacle(self.planet, nxt):
+                    blocked = True
+                    obstacle_pos = nxt
+                    break #megáll, a blokkolo utasitast nem hajtja vegre, de ha nicns akadály lép
+                self.position = nxt
+                processed += 1
+            else:
+                #ismeretlen parancsot letiltjuk, ezzen nem növeljüök a processed változót
+                pass
+
+        remaining = commands[processed:]
+        return ExecutionResult(
+            position=self.position,
+            direction=self.direction.value,
+            blocked=blocked,
+            obstace=obstacle_pos,
+            processed=processed,
+            remaining=remaining,
+        )
