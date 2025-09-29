@@ -29,6 +29,9 @@ class Direction(str, Enum):
             Direction.S: Direction.W,
             Direction.W: Direction.N,
         }[self]
+
+def _wrap(planet: Moon, pos: Position) -> Position:
+    return Position(pos.x % planet.width, pos.y % planet.height)
     
 def _dir_vector(d: Direction) -> tuple[int, int]:
     # y koordinátára váltás a fordulás miatt
@@ -57,10 +60,12 @@ class Buggy:
     def turn_right(self) -> None:
         self.direction = self.direction.right()
 
-    def move_forward(self) -> None:
+    def _next(self, sign: int) -> Position:
         dx, dy = _dir_vector(self.direction)
-        self.position = Position(self.position.x + dx, self.position.y + dy)
+        return _wrap(self.planet, Position(self.position.x + dx * sign, self.position.y + dy * sign))
+
+    def move_forward(self) -> None:
+        self.position = self._next(+1)
 
     def move_backward(self) -> None:
-        dx, dy = _dir_vector(self.direction)
-        self.position = Position(self.position.x - dx, self.position.y - dy)
+        self.position = self._next(-1)
