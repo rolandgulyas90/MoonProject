@@ -14,6 +14,22 @@ class Direction(str, Enum):
     E = "E"
     W = "W"
 
+    def left(self) -> "Direction":
+        return {
+            Direction.N: Direction.W,
+            Direction.W: Direction.S,
+            Direction.S: Direction.E,
+            Direction.E: Direction.N,
+        }[self]
+
+    def right(self) -> "Direction":
+        return {
+            Direction.N: Direction.E,
+            Direction.W: Direction.S,
+            Direction.S: Direction.W,
+            Direction.E: Direction.N,
+        }[self]
+
 @dataclass
 class Moon:
     width: int
@@ -25,3 +41,9 @@ class Buggy:
     planet: Moon
     position: Position
     direction: Direction
+
+    def turn_left(self) -> None:
+        self.direction = self.direction.left()
+
+    def turn_right(self) -> None:
+        self.direction = self.direction.right()
