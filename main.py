@@ -36,7 +36,7 @@ class ExecutionResult:
     position: Position
     direction: str
     blocked: bool
-    obstace: Optional[Position]
+    obstaces: Optional[Position]
     processed: int
     remaining: str
 
@@ -114,7 +114,7 @@ class Buggy:
             position=self.position,
             direction=self.direction.value,
             blocked=blocked,
-            obstace=obstacle_pos,
+            obstaces=obstacle_pos,
             processed=processed,
             remaining=remaining,
         )
