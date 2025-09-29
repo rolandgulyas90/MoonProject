@@ -25,10 +25,19 @@ class Direction(str, Enum):
     def right(self) -> "Direction":
         return {
             Direction.N: Direction.E,
-            Direction.W: Direction.S,
+            Direction.E: Direction.S,
             Direction.S: Direction.W,
-            Direction.E: Direction.N,
+            Direction.W: Direction.N,
         }[self]
+    
+def _dir_vector(d: Direction) -> tuple[int, int]:
+    # y koordinátára váltás a fordulás miatt
+    return{
+        Direction.N: (0,1),
+        Direction.E: (1,0),
+        Direction.S: (0,-1),
+        Direction.W: (-1,0),
+    }[d]
 
 @dataclass
 class Moon:
@@ -47,3 +56,11 @@ class Buggy:
 
     def turn_right(self) -> None:
         self.direction = self.direction.right()
+
+    def move_forward(self) -> None:
+        dx, dy = _dir_vector(self.direction)
+        self.position = Position(self.position.x + dx, self.position.y + dy)
+
+    def move_backward(self) -> None:
+        dx, dy = _dir_vector(self.direction)
+        self.position = Position(self.position.x - dx, self.position.y - dy)
