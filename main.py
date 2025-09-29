@@ -76,23 +76,27 @@ class Buggy:
     def turn_right(self) -> None:
         self.direction = self.direction.right()
 
-    def _next(self, sign: int) -> Position:
-        dx, dy = _dir_vector(self.direction)
-        return self.planet.wrap(
-            Position(self.position.x + sign * dx, self.position.y + sign * dy)
+    def _step(self, sign: int, *, check_obstacles: bool) -> bool:
+        dx, dy = self.direction.vector
+        nxt = self.planet.wrap(
+            Position(self.position.x + sign * dx, self.position.y + sign * dy),
         )
+        if check_obstacles and self.planet.has_obstacle(nxt):
+            return False
+        self.position = nxt
+        return True
 
     def move_forward(self) -> None:
         #közvetlen hívásnál nicsn akadály észlelés
-        self.position = self._next(+1)
+        self._step(+1, check_obstacles=False)
 
     def move_backward(self) -> None:
-        self.position = self._next(-1)
+        self._step(-1, check_obstacles= False)
 
     def execute(self, commands: str)   -> ExecutionResult:
         processed = 0
         blocked = False
-        obstacle_pos: Optional[Position] = None
+        obstacle_pos = None
 
         for c in commands:
             cl = c.lower()
@@ -102,14 +106,22 @@ class Buggy:
             elif cl == "r":
                 self.turn_right()
                 processed += 1
-            elif cl in ("f","b"):
-                sign = +1 if cl == "f" else -1
-                nxt = self._next(sign)
-                if self.planet.has_obstacle(nxt):
+            elif cl == "f":
+                ok = self._step(+1, check_obstacles=True)
+                if not ok:
                     blocked = True
-                    obstacle_pos = nxt
-                    break #megáll, a blokkolo utasitast nem hajtja vegre, de ha nicns akadály lép
-                self.position = nxt
+                    #ahol megakadna:
+                    dx, dy = self.direction.vector
+                    obstacle_pos = self.planet.wrap(Position(self.position.x + dx, self.position.y + dy))
+                    break
+                processed += 1
+            elif cl == "b":
+                ok = self._step(-1, check_obstacles=True)
+                if not ok:
+                    blocked = True
+                    dx, dy = self.direction.vector
+                    obstacle_pos = self.planet.wrap(Position(self.position.x - dx, self.position.y - dy))
+                    break
                 processed += 1
             else:
                 #ismeretlen parancsot letiltjuk, ezzel nem növeljüök a processed változót
