@@ -107,3 +107,13 @@ def test_processed_counts_turns_and_stops_on_obstacle():
     # processed = 3 (r,l,f), remaining = "f"
     assert res.processed == 3
     assert res.remaining == "f"
+
+def test_ignoring_unknown_orders():
+    planet = Moon(5, 5, obstacles=[(2, 2)])
+    b = Buggy(planet, Position(0, 0), Direction.E)
+
+    res = b.execute("xlyrfz")
+    assert res.processed == 3  # csak l, r, f számít
+    assert res.blocked is False
+    assert res.remaining == ""  # nem blokkolt, feldolgozott mindent
+    assert b.position == Position(1, 0)
