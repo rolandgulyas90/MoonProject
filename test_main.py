@@ -117,3 +117,24 @@ def test_ignoring_unknown_orders():
     assert res.blocked is False
     assert res.remaining == ""  # nem blokkolt, feldolgozott mindent
     assert b.position == Position(1, 0)
+
+def test_stops_at_first_of_multiple_obstacles():
+    moon = Moon(5, 5, obstacles=[(1, 0), (2, 0)])
+    b = Buggy(moon, Position(0, 0), Direction.E)
+
+    res = b.execute("fff")
+    # már az első f célmezője (1,0) akadály -> azonnal megáll
+    assert res.blocked is True
+    assert res.obstacles == Position(1, 0)
+    assert res.processed == 0
+    assert res.remaining == "fff"
+    assert b.position == Position(0, 0)  # nem mozdult
+    assert res.direction == "E"
+
+def test_many_backward_wraps_negative_direction():
+    moon = Moon(5, 5, [])
+    b = Buggy(moon, Position(0, 0), Direction.W)
+
+    res = b.execute("b" * 6)
+    assert res.blocked is False
+    assert b.position == Position(1, 0)
