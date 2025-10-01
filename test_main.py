@@ -138,3 +138,29 @@ def test_many_backward_wraps_negative_direction():
     res = b.execute("b" * 6)
     assert res.blocked is False
     assert b.position == Position(1, 0)
+
+def test_wrap_forward_hits_obstacle_and_blocks():
+    # (4,2) kelet felé "f" -> wrap után (0,2), ahol akadály van
+    moon = Moon(5, 5, obstacles=[(0, 2)])
+    b = Buggy(moon, Position(4, 2), Direction.E)
+
+    res = b.execute("f")
+    assert res.blocked is True
+    assert res.obstacles == Position(0, 2)
+    assert b.position == Position(4, 2)
+    assert res.processed == 0
+    assert res.remaining == "f"
+    assert res.direction == "E"
+
+def test_wrap_backward_hits_obstacle_and_blocks():
+    # (0,2) kelet irányban "b" -> nyugatra lépne wrap-pel (4,2), ott akadály
+    moon = Moon(5, 5, obstacles=[(4, 2)])
+    b = Buggy(moon, Position(0, 2), Direction.E)
+
+    res = b.execute("b")
+    assert res.blocked is True
+    assert res.obstacles == Position(4, 2)
+    assert b.position == Position(0, 2)
+    assert res.processed == 0
+    assert res.remaining == "b"
+    assert res.direction == "E"
