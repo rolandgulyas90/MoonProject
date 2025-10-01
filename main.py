@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional, Iterable, Set, Tuple
 
@@ -48,14 +48,12 @@ class ExecutionResult:
 class Moon:
     width: int
     height: int
-    obstacles: list[tuple[int, int]]
+    obstacles: Iterable[Tuple[int, int]] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
-        # Normalizálás és 0(1) keresés: list >set. modulo térképméret
-        norm: Set[Tuple[int, int]] = {
+        self._obstacles: Set[Tuple[int, int]] = {
             (x % self.width, y % self.height) for (x, y) in self.obstacles
         }
-        self.obstacles = norm
 
     def wrap(self, pos: Position) -> Position:
         return Position(pos.x % self.width, pos.y % self.height)
