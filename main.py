@@ -59,7 +59,7 @@ class Moon:
         return Position(pos.x % self.width, pos.y % self.height)
 
     def has_obstacle(self, pos: Position) -> bool:
-        return (pos.x % self.width, pos.y % self.height) in self.obstacles
+        return (pos.x % self.width, pos.y % self.height) in self._obstacles
 
 
 @dataclass
@@ -95,8 +95,9 @@ class Buggy:
         processed = 0
         blocked = False
         obstacle_pos = None
+        remaining = ""
 
-        for c in commands:
+        for idx, c in enumerate(commands):
             cl = c.lower()
             if cl == "l":
                 self.turn_left()
@@ -108,9 +109,9 @@ class Buggy:
                 ok = self._step(+1, check_obstacles=True)
                 if not ok:
                     blocked = True
-                    #ahol megakadna:
                     dx, dy = self.direction.vector
                     obstacle_pos = self.planet.wrap(Position(self.position.x + dx, self.position.y + dy))
+                    remaining = commands[idx:]  # a blokkoló utasítástól kezdve
                     break
                 processed += 1
             elif cl == "b":
@@ -119,13 +120,15 @@ class Buggy:
                     blocked = True
                     dx, dy = self.direction.vector
                     obstacle_pos = self.planet.wrap(Position(self.position.x - dx, self.position.y - dy))
+                    remaining = commands[idx:]  # a blokkoló utasítástól kezdve
                     break
                 processed += 1
             else:
-                #ismeretlen parancsot letiltjuk, ezzel nem növeljüök a processed változót
-                pass
+                # ismeretlen parancs: no-op (nem növeljük processed-et),
+                # de NEM kerül a remaining-be, mert végrehajtás szempontból feldolgoztuk.
+                continue
 
-        remaining = commands[processed:]
+            # ha nem történt break (nem blokk), a remaining maradjon üresen
         return ExecutionResult(
             position=self.position,
             direction=self.direction.value,
