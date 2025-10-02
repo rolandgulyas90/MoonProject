@@ -152,3 +152,94 @@ def test_wrap_backward_hits_obstacle_and_blocks():
     assert res.processed == 0
     assert res.remaining == "b"
     assert res.direction == "E"
+
+def test_sequence_of_turn_steps_cycles_cleanly():
+    planet = Moon(5, 5, [])
+    b = Buggy(planet, Position(2, 2), Direction.N)
+    # l (->W, (1,2)), r (->N, (1,3)), r (->E, (2,3)), l (->N, (2,4))
+    res = b.execute("lrrl")
+    assert res.blocked is False
+    assert res.processed == 4
+    assert res.remaining == ""
+    assert b.position == Position(2, 4)
+    assert b.direction == Direction.N
+
+def test_blocked_l_keeps_new_direction_across_calls():
+    # akadály balra: (1,2)
+    planet = Moon(5, 5, obstacles=[(1, 2)])
+    b = Buggy(planet, Position(2, 2), Direction.N)
+
+    # első hívás: 'l' blokkol (irány W megmarad, poz marad)
+    res1 = b.execute("l")
+    assert res1.blocked is True
+    assert res1.obstacles == Position(1, 2)
+    assert b.position == Position(2, 2)
+    assert b.direction == Direction.W
+    assert res1.processed == 0
+    assert res1.remaining == "l"
+
+    # második hívás: 'f' is blokkol ugyanazon akadályon, irány továbbra is W
+    res2 = b.execute("f")
+    assert res2.blocked is True
+    assert res2.obstacles == Position(1, 2)
+    assert b.position == Position(2, 2)
+    assert b.direction == Direction.W
+    assert res2.processed == 0
+    assert res2.remaining == "f"
+
+def test_blocked_l_with_wrap_target():
+    # 5x5-ös világban (0,4)-ről 'l' -> W irány, cél (-1,4) wrap -> (4,4)
+    planet = Moon(5, 5, obstacles=[(4, 4)])
+    b = Buggy(planet, Position(0, 4), Direction.N)
+    res = b.execute("l")
+    assert res.blocked is True
+    assert res.obstacles == Position(4, 4)
+    assert b.position == Position(0, 4)
+    assert b.direction == Direction.W  # új irány megmarad
+    assert res.processed == 0
+    assert res.remaining == "l"
+
+def test_processed_and_remaining_counts_mixed_on_block():
+    # útvonal: l (wrap miatt 4,0), f (3,0), f (2,0) <-- itt akadály
+    planet = Moon(5, 5, obstacles=[(2, 0)])
+    b = Buggy(planet, Position(0, 0), Direction.N)
+    res = b.execute("lffrbx")
+    # végállapot blokk a 3. értelmezett parancson (index 2: 'f')
+    assert res.blocked is True
+    assert b.position == Position(3, 0)   # az első f-ig jutott
+    assert b.direction == Direction.W
+    assert res.processed == 2             # 'l' és az első 'f'
+    assert res.remaining == "frbx"
+    assert res.obstacles == Position(2, 0)
+
+def test_case_insensitivity_and_space_ignored():
+    planet = Moon(5, 5, [])
+    b = Buggy(planet, Position(2, 2), Direction.N)
+    res = b.execute(" L  f  r B ")
+    # lépések: L -> W,(1,2); f -> (0,2); r -> N,(0,3); B -> dél felé hátra (N-ből) -> (0,2)
+    assert res.blocked is False
+    assert b.position == Position(0, 2)
+    assert b.direction == Direction.N
+    assert res.processed == 4
+    assert res.remaining == ""
+
+def test_backward_blocks_on_direct_obstacle():
+    planet = Moon(5, 5, obstacles=[(1, 2)])
+    b = Buggy(planet, Position(2, 2), Direction.E)
+    res = b.execute("b")
+    assert res.blocked is True
+    assert res.obstacles == Position(1, 2)
+    assert b.position == Position(2, 2)
+    assert b.direction == Direction.E
+    assert res.processed == 0
+    assert res.remaining == "b"
+
+def test_unknowns_do_not_increase_processed_before_block():
+    planet = Moon(5, 5, obstacles=[(1, 0)])
+    b = Buggy(planet, Position(0, 0), Direction.E)
+    res = b.execute("xxf")  # az 'f' blokkol azonnal
+    assert res.blocked is True
+    assert res.processed == 0   # az 'x'-ek nem növelik
+    assert res.remaining == "f"
+    assert res.obstacles == Position(1, 0)
+
